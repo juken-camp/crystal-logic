@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crystal Logic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        html {
+            height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto; /* 縦スクロール許可 */
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 10px;
+            overflow-x: hidden;
+            overflow-y: auto; /* 縦スクロール許可 */
+        }
+        
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background: transparent;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .game-container {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+            margin: 0 auto;
+            padding-bottom: 20px; /* 下部余白追加 */
+        }
+        
+        .title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            margin: 20px 0 8px 0;
+            background: linear-gradient(45deg, #00d4ff, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: #b8c6db;
+            opacity: 0.8;
+        }
+        
+        .target-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+        }
+        
+        .target-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #00d4ff;
+            margin-bottom: 5px;
+        }
+        
+        .target-label {
+            font-size: 0.8rem;
+            color: #b8c6db;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #00d4ff;
+        }
+        
+        .calculation-display {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-height: 3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #00d4ff;
+        }
+        
+        .game-board {
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 8px;
+            aspect-ratio: 1;
+        }
+        
+        .crystal {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            min-height: 50px;
+            touch-action: manipulation;
+        }
+        
+        .crystal:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px rgba(52, 152, 219, 0.6);
+        }
+        
+        .crystal:active {
+            transform: scale(0.95);
+        }
+        
+        .crystal.selected {
+            background: linear-gradient(45deg, #f1c40f, #f39c12);
+            box-shadow: 0 0 25px rgba(241, 196, 15, 0.8);
+            transform: scale(1.1);
+        }
+        
+        .crystal.used {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: #7f8c8d;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 12px 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            min-width: 80px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn.clear {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .message {
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #00d4ff;
+            min-height: 1.5rem;
+            padding: 0 10px;
+        }
+        
+        /* レスポンシブ対応 */
+        @media (max-width: 400px) {
+            .game-container {
+                padding: 5px;
+            }
+            
+            .title {
+                font-size: 1.8rem;
+            }
+            
+            .target-number {
+                font-size: 2rem;
+            }
+            
+            .crystal {
+                font-size: 1.1rem;
+                min-height: 45px;
+            }
+            
+            .btn {
+                padding: 10px 15px;
+                font-size: 0.8rem;
+                min-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="game-container">
+        <h1 class="title" onclick="resetGame()">Crystal Logic</h1>
+        <p class="subtitle">古代数秘術の神秘なるパズル</p>
+        
+        <div class="target-display">
+            <div class="target-number" id="targetNumber">15</div>
+            <div class="target-label">目標の数値</div>
+        </div>
+        
+        <div class="stats">
+            <span>レベル: <span id="level">1</span></span>
+            <span>スコア: <span id="score">0</span></span>
+            <span>連鎖: <span id="chain">0</span></span>
+        </div>
+        
+        <div class="calculation-display" id="calculationDisplay">
+            クリスタルをタップして数式を作ろう
+        </div>
+        
+        <div class="game-board">
+            <div class="grid" id="gameGrid"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn clear" onclick="clearSelection()">クリア</button>
+            <button class="btn" onclick="checkAnswer()">確認</button>
+            <button class="btn" onclick="generateNewPuzzle()">新問題</button>
+        </div>
+        
+        <div class="message" id="message">数字を順番にタップして目標数値を作ろう！</div>
+    </div>
+
+    <script>
+        console.log('Crystal Logic starting...');
+        
+        // ゲーム状態
+        let gameState = {
+            grid: [],
+            selectedCrystals: [],
+            usedCrystals: new Set(),
+            targetNumber: 15,
+            currentCalculation: 0,
+            level: 1,
+            score: 0,
+            chainCount: 0,
+            calculationString: ""
+        };
+        
+        // 星空背景生成
+        function createStars() {
+            console.log('Creating stars...');
+            const starsContainer = document.getElementById('stars');
+            if (!starsContainer) return;
+            
+            starsContainer.innerHTML = '';
+            for (let i = 0; i < 30; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 新しいパズル生成
+        function generateNewPuzzle() {
+            console.log('Generating new puzzle...');
+            
+            // グリッド初期化
+            gameState.grid = [];
+            gameState.selectedCrystals = [];
+            gameState.usedCrystals.clear();
+            gameState.currentCalculation = 0;
+            gameState.calculationString = "";
+            
+            // 25個の数字を生成（1-9）
+            for (let i = 0; i < 25; i++) {
+                gameState.grid.push(Math.floor(Math.random() * 9) + 1);
+            }
+            
+            // 目標数値設定
+            gameState.targetNumber = 10 + Math.floor(Math.random() * 20);
+            
+            updateDisplay();
+            showMessage("新しい数秘術の謎が現れました！");
+        }
+        
+        // クリスタル選択
+        function selectCrystal(index) {
+            console.log('Crystal selected:', index);
+            
+            if (gameState.usedCrystals.has(index)) {
+                showMessage("このクリスタルは既に使用されています");
+                return;
+            }
+            
+            const number = gameState.grid[index];
+            gameState.selectedCrystals.push({index, number});
+            
+            // 計算更新
+            if (gameState.calculationString === "") {
+                gameState.calculationString = number.toString();
+                gameState.currentCalculation = number;
+            } else {
+                gameState.calculationString += " + " + number;
+                gameState.currentCalculation += number;
+            }
+            
+            updateDisplay();
+            
+            // 自動チェック
+            if (gameState.currentCalculation === gameState.targetNumber) {
+                setTimeout(() => checkAnswer(), 500);
+            }
+        }
+        
+        // 答えチェック
+        function checkAnswer() {
+            console.log('Checking answer...');
+            
+            if (gameState.selectedCrystals.length === 0) {
+                showMessage("クリスタルを選択してください");
+                return;
+            }
+            
+            if (gameState.currentCalculation === gameState.targetNumber) {
+                // 正解
+                gameState.selectedCrystals.forEach(crystal => {
+                    gameState.usedCrystals.add(crystal.index);
+                });
+                
+                gameState.score += gameState.selectedCrystals.length * 10;
+                gameState.chainCount++;
+                
+                showMessage(`正解！ +${gameState.selectedCrystals.length * 10}点`);
+                
+                // 新しい目標設定
+                setTimeout(() => {
+                    if (gameState.usedCrystals.size >= 20) {
+                        gameState.level++;
+                        generateNewPuzzle();
+                        showMessage(`レベル ${gameState.level} に進みました！`);
+                    } else {
+                        gameState.targetNumber = 5 + Math.floor(Math.random() * 25);
+                        clearSelection();
+                        showMessage("新しい目標が設定されました！");
+                    }
+                }, 1500);
+            } else {
+                showMessage(`計算結果: ${gameState.currentCalculation} ≠ ${gameState.targetNumber}`);
+            }
+        }
+        
+        // 選択クリア
+        function clearSelection() {
+            console.log('Clearing selection...');
+            gameState.selectedCrystals = [];
+            gameState.currentCalculation = 0;
+            gameState.calculationString = "";
+            updateDisplay();
+        }
+        
+        // 表示更新
+        function updateDisplay() {
+            console.log('Updating display...');
+            
+            // グリッド更新
+            const gameGrid = document.getElementById('gameGrid');
+            if (!gameGrid) return;
+            
+            gameGrid.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const crystal = document.createElement('div');
+                crystal.className = 'crystal';
+                crystal.textContent = gameState.grid[i] || '?';
+                
+                // イベントリスナー追加
+                crystal.addEventListener('click', () => selectCrystal(i));
+                crystal.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    selectCrystal(i);
+                });
+                
+                // 状態に応じたスタイル
+                if (gameState.selectedCrystals.some(c => c.index === i)) {
+                    crystal.classList.add('selected');
+                }
+                
+                if (gameState.usedCrystals.has(i)) {
+                    crystal.classList.add('used');
+                }
+                
+                gameGrid.appendChild(crystal);
+            }
+            
+            // ステータス更新
+            const targetElement = document.getElementById('targetNumber');
+            const levelElement = document.getElementById('level');
+            const scoreElement = document.getElementById('score');
+            const chainElement = document.getElementById('chain');
+            const calculationElement = document.getElementById('calculationDisplay');
+            
+            if (targetElement) targetElement.textContent = gameState.targetNumber;
+            if (levelElement) levelElement.textContent = gameState.level;
+            if (scoreElement) scoreElement.textContent = gameState.score;
+            if (chainElement) chainElement.textContent = gameState.chainCount;
+            
+            if (calculationElement) {
+                if (gameState.calculationString === "") {
+                    calculationElement.textContent = "クリスタルをタップして数式を作ろう";
+                } else {
+                    calculationElement.textContent = `${gameState.calculationString} = ${gameState.currentCalculation}`;
+                }
+            }
+        }
+        
+        // メッセージ表示
+        function showMessage(text) {
+            console.log('Message:', text);
+            const messageElement = document.getElementById('message');
+            if (messageElement) {
+                messageElement.textContent = text;
+                
+                setTimeout(() => {
+                    if (messageElement.textContent === text) {
+                        messageElement.textContent = "数字を順番にタップして目標数値を作ろう！";
+                    }
+                }, 3000);
+            }
+        }
+        
+        // ゲームリセット
+        function resetGame() {
+            console.log('Resetting game...');
+            gameState.level = 1;
+            gameState.score = 0;
+            gameState.chainCount = 0;
+            generateNewPuzzle();
+            showMessage("ゲームをリセットしました！");
+        }
+        
+        // 初期化
+        function initGame() {
+            console.log('Initializing game...');
+            try {
+                createStars();
+                generateNewPuzzle();
+                showMessage("Crystal Logicへようこそ！");
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showMessage("ゲームの初期化中にエラーが発生しました");
+            }
+        }
+        
+        // DOMContentLoaded イベント
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM loaded, starting game...');
+            initGame();
+        });
+        
+        // フォールバック初期化
+        setTimeout(() => {
+            if (!gameState.grid.length) {
+                console.log('Fallback initialization...');
+                initGame();
+            }
+        }, 1000);
+        
+        console.log('Script loaded successfully');
+    </script>
+</body>
+</html>
