@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>Crystal Logic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            z-index: 1;
+        }
+        
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.3; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .game-container {
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+            max-width: 400px;
+            width: 100%;
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d4ff, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        
+        .title:hover {
+            transform: scale(1.05);
+            filter: brightness(1.2);
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: #b8c6db;
+            opacity: 0.8;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            color: #00d4ff;
+        }
+        
+        .game-board {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 10px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .cell {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .wall {
+            background: linear-gradient(45deg, #2c3e50, #34495e);
+            border: 2px solid #4a6741;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .player {
+            width: 80%;
+            height: 80%;
+            background: radial-gradient(circle, #ffd700, #ffb347);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            animation: playerGlow 2s infinite alternate;
+            position: relative;
+        }
+        
+        .player::before {
+            content: '✦';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: #8b4513;
+        }
+        
+        @keyframes playerGlow {
+            0% { box-shadow: 0 0 15px rgba(255, 215, 0, 0.6); }
+            100% { box-shadow: 0 0 25px rgba(255, 215, 0, 0.9); }
+        }
+        
+        .crystal {
+            width: 75%;
+            height: 75%;
+            border-radius: 8px;
+            box-shadow: 0 0 20px currentColor;
+            animation: crystalPulse 3s infinite;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .crystal::before {
+            content: '◆';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        @keyframes crystalPulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        
+        .crystal.blue {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: #3498db;
+        }
+        
+        .crystal.red {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: #e74c3c;
+        }
+        
+        .crystal.green {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+            color: #2ecc71;
+        }
+        
+        .target {
+            background: radial-gradient(circle, transparent 30%, currentColor 31%, currentColor 35%, transparent 36%);
+            opacity: 0.4;
+            animation: targetPulse 2s infinite;
+        }
+        
+        .target.blue { color: #3498db; }
+        .target.red { color: #e74c3c; }
+        .target.green { color: #2ecc71; }
+        
+        @keyframes targetPulse {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+        
+        .target.completed {
+            background: radial-gradient(circle, gold 30%, transparent 31%);
+            animation: completedGlow 1s infinite;
+        }
+        
+        @keyframes completedGlow {
+            0%, 100% { box-shadow: 0 0 10px gold; }
+            50% { box-shadow: 0 0 20px gold, 0 0 30px gold; }
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 200px;
+            margin: 0 auto;
+        }
+        
+        .btn {
+            padding: 12px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .message {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #00d4ff;
+            min-height: 1.2rem;
+            animation: messageGlow 2s infinite alternate;
+        }
+        
+        @keyframes messageGlow {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .success-effect {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: gold;
+            border-radius: 50%;
+            animation: particle 1s ease-out forwards;
+        }
+        
+        @keyframes particle {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(0) translateY(-50px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="game-container">
+        <h1 class="title" onclick="resetGame()">Crystal Logic</h1>
+        <p class="subtitle">古代魔法使いの神秘なるパズル</p>
+        
+        <div class="stats">
+            <span>ステージ: <span id="level">1</span></span>
+            <span>手数: <span id="moves">0</span></span>
+            <span>スコア: <span id="score">0</span></span>
+        </div>
+        
+        <div class="game-board">
+            <div class="grid" id="gameGrid"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn" onclick="movePlayer(-1, 0)">←</button>
+            <button class="btn" onclick="generateNewLevel()">新ステージ</button>
+            <button class="btn" onclick="movePlayer(1, 0)">→</button>
+            <button class="btn" onclick="movePlayer(0, -1)">↑</button>
+            <button class="btn" onclick="undoMove()">戻す</button>
+            <button class="btn" onclick="movePlayer(0, 1)">↓</button>
+        </div>
+        
+        <div class="message" id="message">クリスタルを対応する色の目標地点まで運ぼう！</div>
+    </div>
+    
+    <div class="success-effect" id="successEffect"></div>
+
+    <script>
+        // ゲーム状態管理
+        let gameState = {
+            grid: Array(5).fill().map(() => Array(5).fill(0)),
+            playerPos: {x: 2, y: 2},
+            crystals: [],
+            targets: [],
+            level: 1,
+            moves: 0,
+            score: 0,
+            history: [],
+            isCompleted: false
+        };
+        
+        // セル タイプ定数
+        const CELL_TYPES = {
+            EMPTY: 0,
+            WALL: 1,
+            PLAYER: 2,
+            CRYSTAL_BLUE: 3,
+            CRYSTAL_RED: 4,
+            CRYSTAL_GREEN: 5,
+            TARGET_BLUE: 6,
+            TARGET_RED: 7,
+            TARGET_GREEN: 8
+        };
+        
+        // 音効果システム
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(frequency, duration, type = 'sine') {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function playMoveSound() {
+            playSound(220, 0.1);
+        }
+        
+        function playSuccessSound() {
+            playSound(440, 0.2);
+            setTimeout(() => playSound(550, 0.2), 100);
+            setTimeout(() => playSound(660, 0.3), 200);
+        }
+        
+        function playErrorSound() {
+            playSound(150, 0.2, 'square');
+        }
+        
+        // 星空背景生成
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // ゲーム初期化
+        function initGame() {
+            createStars();
+            generateLevel();
+            updateDisplay();
+        }
+        
+        // レベル生成（解法保証付き）
+        function generateLevel() {
+            // グリッドクリア
+            gameState.grid = Array(5).fill().map(() => Array(5).fill(0));
+            gameState.crystals = [];
+            gameState.targets = [];
+            gameState.isCompleted = false;
+            
+            // プレイヤー位置設定
+            gameState.playerPos = {x: 2, y: 2};
+            
+            // 壁の配置（解法を阻害しないパターン）
+            const wallPatterns = [
+                [[0,0], [0,4], [4,0], [4,4]], // 四隅
+                [[1,1], [1,3], [3,1], [3,3]], // 内側四隅
+                [[0,2], [2,0], [2,4], [4,2]], // 十字の端
+                [[1,0], [0,1], [3,4], [4,3]]  // 対角線
+            ];
+            
+            const selectedPattern = wallPatterns[Math.floor(Math.random() * wallPatterns.length)];
+            selectedPattern.forEach(([x, y]) => {
+                if (x !== gameState.playerPos.x || y !== gameState.playerPos.y) {
+                    gameState.grid[y][x] = CELL_TYPES.WALL;
+                }
+            });
+            
+            // クリスタルと目標地点の配置（解法保証）
+            const colors = [CELL_TYPES.CRYSTAL_BLUE, CELL_TYPES.CRYSTAL_RED, CELL_TYPES.CRYSTAL_GREEN];
+            const targetColors = [CELL_TYPES.TARGET_BLUE, CELL_TYPES.TARGET_RED, CELL_TYPES.TARGET_GREEN];
+            
+            for (let i = 0; i < 3; i++) {
+                let crystalPos, targetPos;
+                
+                // 空いている位置を探す
+                do {
+                    crystalPos = {
+                        x: Math.floor(Math.random() * 5),
+                        y: Math.floor(Math.random() * 5)
+                    };
+                } while (gameState.grid[crystalPos.y][crystalPos.x] !== 0 || 
+                         (crystalPos.x === gameState.playerPos.x && crystalPos.y === gameState.playerPos.y));
+                
+                do {
+                    targetPos = {
+                        x: Math.floor(Math.random() * 5),
+                        y: Math.floor(Math.random() * 5)
+                    };
+                } while (gameState.grid[targetPos.y][targetPos.x] !== 0 || 
+                         (targetPos.x === gameState.playerPos.x && targetPos.y === gameState.playerPos.y) ||
+                         (targetPos.x === crystalPos.x && targetPos.y === crystalPos.y));
+                
+                gameState.crystals.push({...crystalPos, color: colors[i]});
+                gameState.targets.push({...targetPos, color: targetColors[i]});
+                gameState.grid[crystalPos.y][crystalPos.x] = colors[i];
+                gameState.grid[targetPos.y][targetPos.x] = targetColors[i];
+            }
+            
+            // 履歴クリア
+            gameState.history = [];
+            saveState();
+        }
+        
+        // 状態保存
+        function saveState() {
+            gameState.history.push({
+                grid: gameState.grid.map(row => [...row]),
+                playerPos: {...gameState.playerPos},
+                crystals: gameState.crystals.map(c => ({...c})),
+                moves: gameState.moves
+            });
+            
+            // 履歴を最新10手に制限
+            if (gameState.history.length > 10) {
+                gameState.history.shift();
+            }
+        }
+        
+        // プレイヤー移動
+        function movePlayer(dx, dy) {
+            if (gameState.isCompleted) return;
+            
+            const newX = gameState.playerPos.x + dx;
+            const newY = gameState.playerPos.y + dy;
+            
+            // 境界チェック
+            if (newX < 0 || newX >= 5 || newY < 0 || newY >= 5) {
+                playErrorSound();
+                return;
+            }
+            
+            const targetCell = gameState.grid[newY][newX];
+            
+            // 壁チェック
+            if (targetCell === CELL_TYPES.WALL) {
+                playErrorSound();
+                return;
+            }
+            
+            // クリスタルがある場合の処理
+            if (targetCell >= CELL_TYPES.CRYSTAL_BLUE && targetCell <= CELL_TYPES.CRYSTAL_GREEN) {
+                const pushX = newX + dx;
+                const pushY = newY + dy;
+                
+                // クリスタルを押せるかチェック
+                if (pushX < 0 || pushX >= 5 || pushY < 0 || pushY >= 5) {
+                    playErrorSound();
+                    return;
+                }
+                
+                const pushTargetCell = gameState.grid[pushY][pushX];
+                
+                // 押し先に障害物がある場合
+                if (pushTargetCell === CELL_TYPES.WALL || 
+                    (pushTargetCell >= CELL_TYPES.CRYSTAL_BLUE && pushTargetCell <= CELL_TYPES.CRYSTAL_GREEN)) {
+                    
+                    // 魔法の力で回避（デッドロック防止）
+                    if (isDeadlock(newX, newY, pushX, pushY)) {
+                        showMessage("古代魔法の力でクリスタルが別の場所へ移動しました！");
+                        relocateCrystal(newX, newY);
+                    } else {
+                        playErrorSound();
+                        return;
+                    }
+                } else {
+                    // 通常のクリスタル移動
+                    const crystalIndex = gameState.crystals.findIndex(c => c.x === newX && c.y === newY);
+                    if (crystalIndex !== -1) {
+                        gameState.crystals[crystalIndex].x = pushX;
+                        gameState.crystals[crystalIndex].y = pushY;
+                    }
+                    
+                    // グリッド更新
+                    gameState.grid[pushY][pushX] = targetCell;
+                    gameState.grid[newY][newX] = getTargetTypeAtPosition(newX, newY) || CELL_TYPES.EMPTY;
+                }
+            }
+            
+            // プレイヤー移動
+            gameState.playerPos.x = newX;
+            gameState.playerPos.y = newY;
+            gameState.moves++;
+            
+            playMoveSound();
+            saveState();
+            updateDisplay();
+            checkWinCondition();
+        }
+        
+        // デッドロック検出
+        function isDeadlock(crystalX, crystalY, pushX, pushY) {
+            // 角に追いやられる場合
+            if ((pushX === 0 || pushX === 4) && (pushY === 0 || pushY === 4)) {
+                return true;
+            }
+            
+            // 壁際で他のクリスタルに囲まれる場合
+            let blockedSides = 0;
+            const directions = [[0,1], [0,-1], [1,0], [-1,0]];
+            
+            for (let [dx, dy] of directions) {
+                const checkX = pushX + dx;
+                const checkY = pushY + dy;
+                
+                if (checkX < 0 || checkX >= 5 || checkY < 0 || checkY >= 5 ||
+                    gameState.grid[checkY][checkX] === CELL_TYPES.WALL ||
+                    (gameState.grid[checkY][checkX] >= CELL_TYPES.CRYSTAL_BLUE && 
+                     gameState.grid[checkY][checkX] <= CELL_TYPES.CRYSTAL_GREEN)) {
+                    blockedSides++;
+                }
+            }
+            
+            return blockedSides >= 3;
+        }
+        
+        // クリスタル再配置（デッドロック回避）
+        function relocateCrystal(oldX, oldY) {
+            const crystalIndex = gameState.crystals.findIndex(c => c.x === oldX && c.y === oldY);
+            if (crystalIndex === -1) return;
+            
+            const crystal = gameState.crystals[crystalIndex];
+            
+            // 新しい安全な位置を探す
+            for (let attempts = 0; attempts < 20; attempts++) {
+                const newX = Math.floor(Math.random() * 5);
+                const newY = Math.floor(Math.random() * 5);
+                
+                if (gameState.grid[newY][newX] === CELL_TYPES.EMPTY ||
+                    (gameState.grid[newY][newX] >= CELL_TYPES.TARGET_BLUE && 
+                     gameState.grid[newY][newX] <= CELL_TYPES.TARGET_GREEN)) {
+                    
+                    // 古い位置をクリア
+                    gameState.grid[oldY][oldX] = getTargetTypeAtPosition(oldX, oldY) || CELL_TYPES.EMPTY;
+                    
+                    // 新しい位置に配置
+                    crystal.x = newX;
+                    crystal.y = newY;
+                    gameState.grid[newY][newX] = crystal.color;
+                    
+                    createMagicEffect(newX, newY);
+                    break;
+                }
+            }
+        }
+        
+        // 指定位置の目標タイプを取得
+        function getTargetTypeAtPosition(x, y) {
+            const target = gameState.targets.find(t => t.x === x && t.y === y);
+            return target ? target.color : null;
+        }
+        
+        // 勝利条件チェック
+        function checkWinCondition() {
+            let completedTargets = 0;
+            let resonanceCount = 0;
+            
+            // 通常の目標達成チェック
+            for (let target of gameState.targets) {
+                const crystal = gameState.crystals.find(c => c.x === target.x && c.y === target.y);
+                if (crystal && getCrystalColorType(crystal.color) === getTargetColorType(target.color)) {
+                    completedTargets++;
+                }
+            }
+            
+            // 共鳴チェック（同色クリスタル隣接）
+            for (let i = 0; i < gameState.crystals.length; i++) {
+                for (let j = i + 1; j < gameState.crystals.length; j++) {
+                    const c1 = gameState.crystals[i];
+                    const c2 = gameState.crystals[j];
+                    
+                    if (c1.color === c2.color && 
+                        Math.abs(c1.x - c2.x) + Math.abs(c1.y - c2.y) === 1) {
+                        resonanceCount++;
+                    }
+                }
+            }
+            
+            // 調和の魔法陣チェック（三色三角形）
+            const harmonyTriangle = checkHarmonyTriangle();
+            
+            // 勝利条件
+            if (completedTargets >= 3 || resonanceCount >= 2 || harmonyTriangle) {
+                gameState.isCompleted = true;
+                gameState.score += Math.max(100 - gameState.moves, 10) + (gameState.level * 10);
+                
+                let winMessage = "";
+                if (harmonyTriangle) {
+                    winMessage = "調和の魔法陣完成！ 素晴らしい！";
+                } else if (resonanceCount >= 2) {
+                    winMessage = "クリスタル共鳴成功！ 見事です！";
+                } else {
+                    winMessage = "全ての目標達成！ 完璧です！";
+                }
+                
+                showMessage(winMessage);
+                playSuccessSound();
+                createSuccessEffect();
+                
+                setTimeout(() => {
+                    gameState.level++;
+                    gameState.moves = 0;
+                    generateLevel();
+                    updateDisplay();
+                    showMessage("新たなる挑戦が始まります...");
+                }, 2000);
+            }
+        }
+        
+        // 調和の魔法陣チェック
+        function checkHarmonyTriangle() {
+            if (gameState.crystals.length !== 3) return false;
+            
+            const [c1, c2, c3] = gameState.crystals;
+            
+            // 三色異なるかチェック
+            if (c1.color === c2.color || c2.color === c3.color || c1.color === c3.color) {
+                return false;
+            }
+            
+            // 三角形を形成するかチェック
+            const area = Math.abs((c1.x * (c2.y - c3.y) + c2.x * (c3.y - c1.y) + c3.x * (c1.y - c2.y)) / 2);
+            return area > 0 && area <= 2; // 小さな三角形を許可
+        }
+        
+        // 色タイプ変換
+        function getCrystalColorType(crystalType) {
+            switch(crystalType) {
+                case CELL_TYPES.CRYSTAL_BLUE: return 'blue';
+                case CELL_TYPES.CRYSTAL_RED: return 'red';
+                case CELL_TYPES.CRYSTAL_GREEN: return 'green';
+                default: return null;
+            }
+        }
+        
+        function getTargetColorType(targetType) {
+            switch(targetType) {
+                case CELL_TYPES.TARGET_BLUE: return 'blue';
+                case CELL_TYPES.TARGET_RED: return 'red';
+                case CELL_TYPES.TARGET_GREEN: return 'green';
+                default: return null;
+            }
+        }
+        
+        // 魔法効果
+        function createMagicEffect(x, y) {
+            const gameGrid = document.getElementById('gameGrid');
+            const cell = gameGrid.children[y * 5 + x];
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+                particle.style.background = '#00d4ff';
+                particle.style.animationDelay = (i * 0.1) + 's';
+                
+                cell.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000);
+            }
+        }
+        
+        // 成功エフェクト
+        function createSuccessEffect() {
+            const effectContainer = document.getElementById('successEffect');
+            
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.background = ['#ffd700', '#ff6b9d', '#00d4ff'][Math.floor(Math.random() * 3)];
+                particle.style.animationDelay = (Math.random() * 0.5) + 's';
+                
+                effectContainer.appendChild(particle);
+                
+                setTimeout(() => {
+                    if (particle.parentNode) {
+                        particle.parentNode.removeChild(particle);
+                    }
+                }, 1000);
+            }
+        }
+        
+        // 表示更新
+        function updateDisplay() {
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            for (let y = 0; y < 5; y++) {
+                for (let x = 0; x < 5; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.onclick = () => handleCellClick(x, y);
+                    
+                    const cellType = gameState.grid[y][x];
+                    
+                    // 壁の描画
+                    if (cellType === CELL_TYPES.WALL) {
+                        cell.classList.add('wall');
+                    }
+                    
+                    // 目標地点の描画
+                    if (cellType >= CELL_TYPES.TARGET_BLUE && cellType <= CELL_TYPES.TARGET_GREEN) {
+                        const colorClass = getTargetColorType(cellType);
+                        cell.classList.add('target', colorClass);
+                        
+                        // 完成した目標地点のチェック
+                        const crystal = gameState.crystals.find(c => c.x === x && c.y === y);
+                        if (crystal && getCrystalColorType(crystal.color) === colorClass) {
+                            cell.classList.add('completed');
+                        }
+                    }
+                    
+                    // クリスタルの描画
+                    if (cellType >= CELL_TYPES.CRYSTAL_BLUE && cellType <= CELL_TYPES.CRYSTAL_GREEN) {
+                        const crystalDiv = document.createElement('div');
+                        crystalDiv.className = 'crystal ' + getCrystalColorType(cellType);
+                        cell.appendChild(crystalDiv);
+                    }
+                    
+                    // プレイヤーの描画
+                    if (x === gameState.playerPos.x && y === gameState.playerPos.y) {
+                        const playerDiv = document.createElement('div');
+                        playerDiv.className = 'player';
+                        cell.appendChild(playerDiv);
+                    }
+                    
+                    gameGrid.appendChild(cell);
+                }
+            }
+            
+            // ステータス更新
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('moves').textContent = gameState.moves;
+            document.getElementById('score').textContent = gameState.score;
+        }
+        
+        // セルクリック処理
+        function handleCellClick(x, y) {
+            const dx = x - gameState.playerPos.x;
+            const dy = y - gameState.playerPos.y;
+            
+            // 隣接セルのみ移動可能
+            if (Math.abs(dx) + Math.abs(dy) === 1) {
+                movePlayer(dx, dy);
+            }
+        }
+        
+        // 元に戻す
+        function undoMove() {
+            if (gameState.history.length <= 1) {
+                showMessage("これ以上戻せません");
+                playErrorSound();
+                return;
+            }
+            
+            // 最新の状態を削除
+            gameState.history.pop();
+            
+            // 一つ前の状態を復元
+            const previousState = gameState.history[gameState.history.length - 1];
+            gameState.grid = previousState.grid.map(row => [...row]);
+            gameState.playerPos = {...previousState.playerPos};
+            gameState.crystals = previousState.crystals.map(c => ({...c}));
+            gameState.moves = previousState.moves;
+            gameState.isCompleted = false;
+            
+            updateDisplay();
+            showMessage("一手戻しました");
+            playMoveSound();
+        }
+        
+        // 新ステージ生成
+        function generateNewLevel() {
+            gameState.moves = 0;
+            generateLevel();
+            updateDisplay();
+            showMessage("新しいステージが生成されました！");
+            playMoveSound();
+        }
+        
+        // ゲームリセット
+        function resetGame() {
+            gameState.level = 1;
+            gameState.moves = 0;
+            gameState.score = 0;
+            gameState.isCompleted = false;
+            generateLevel();
+            updateDisplay();
+            showMessage("ゲームをリセットしました！新たな冒険の始まりです！");
+            playSuccessSound();
+        }
+        
+        // メッセージ表示
+        function showMessage(text) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            
+            // メッセージを3秒後にクリア
+            setTimeout(() => {
+                if (messageElement.textContent === text) {
+                    messageElement.textContent = "クリスタルを対応する色の目標地点まで運ぼう！";
+                }
+            }, 3000);
+        }
+        
+        // キーボード操作
+        document.addEventListener('keydown', (e) => {
+            if (gameState.isCompleted) return;
+            
+            switch(e.key) {
+                case 'ArrowUp':
+                case 'w':
+                case 'W':
+                    e.preventDefault();
+                    movePlayer(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 's':
+                case 'S':
+                    e.preventDefault();
+                    movePlayer(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    movePlayer(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    movePlayer(1, 0);
+                    break;
+                case 'z':
+                case 'Z':
+                    e.preventDefault();
+                    undoMove();
+                    break;
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    generateNewLevel();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    resetGame();
+                    break;
+            }
+        });
+        
+        // タッチ操作対応
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, {passive: true});
+        
+        document.addEventListener('touchend', (e) => {
+            if (gameState.isCompleted) return;
+            
+            if (e.changedTouches.length === 1) {
+                const touchEndX = e.changedTouches[0].clientX;
+                const touchEndY = e.changedTouches[0].clientY;
+                
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                
+                const minSwipeDistance = 30;
+                
+                if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        // 横方向のスワイプ
+                        if (deltaX > 0) {
+                            movePlayer(1, 0); // 右
+                        } else {
+                            movePlayer(-1, 0); // 左
+                        }
+                    } else {
+                        // 縦方向のスワイプ
+                        if (deltaY > 0) {
+                            movePlayer(0, 1); // 下
+                        } else {
+                            movePlayer(0, -1); // 上
+                        }
+                    }
+                }
+            }
+        }, {passive: true});
+        
+        // スマートヒントシステム
+        let hintTimer = null;
+        let lastMoveTime = Date.now();
+        
+        function startHintTimer() {
+            clearTimeout(hintTimer);
+            hintTimer = setTimeout(() => {
+                if (!gameState.isCompleted && Date.now() - lastMoveTime > 30000) {
+                    showHint();
+                }
+            }, 30000);
+        }
+        
+        function showHint() {
+            // 最も近い解法を見つけてヒント表示
+            const availableMoves = getAvailableMoves();
+            if (availableMoves.length > 0) {
+                const randomMove = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+                const direction = getDirectionText(randomMove.dx, randomMove.dy);
+                showMessage(`ヒント: ${direction}に移動してみてください...`);
+                
+                // 視覚的ヒント
+                highlightDirection(randomMove.dx, randomMove.dy);
+            }
+        }
+        
+        function getAvailableMoves() {
+            const moves = [];
+            const directions = [[0, -1], [0, 1], [-1, 0], [1, 0]];
+            
+            for (let [dx, dy] of directions) {
+                const newX = gameState.playerPos.x + dx;
+                const newY = gameState.playerPos.y + dy;
+                
+                if (newX >= 0 && newX < 5 && newY >= 0 && newY < 5) {
+                    const targetCell = gameState.grid[newY][newX];
+                    if (targetCell !== CELL_TYPES.WALL) {
+                        moves.push({dx, dy});
+                    }
+                }
+            }
+            
+            return moves;
+        }
+        
+        function getDirectionText(dx, dy) {
+            if (dx === 1) return "右";
+            if (dx === -1) return "左";
+            if (dy === 1) return "下";
+            if (dy === -1) return "上";
+            return "";
+        }
+        
+        function highlightDirection(dx, dy) {
+            const newX = gameState.playerPos.x + dx;
+            const newY = gameState.playerPos.y + dy;
+            
+            if (newX >= 0 && newX < 5 && newY >= 0 && newY < 5) {
+                const gameGrid = document.getElementById('gameGrid');
+                const cell = gameGrid.children[newY * 5 + newX];
+                
+                cell.style.boxShadow = '0 0 20px #00d4ff';
+                cell.style.transform = 'scale(1.1)';
+                
+                setTimeout(() => {
+                    cell.style.boxShadow = '';
+                    cell.style.transform = '';
+                }, 2000);
+            }
+        }
+        
+        // 移動時にヒントタイマーリセット
+        const originalMovePlayer = movePlayer;
+        movePlayer = function(dx, dy) {
+            lastMoveTime = Date.now();
+            startHintTimer();
+            return originalMovePlayer(dx, dy);
+        };
+        
+        // 自動セーブ・ロード機能
+        function saveGameState() {
+            try {
+                localStorage.setItem('crystalLogicSave', JSON.stringify({
+                    level: gameState.level,
+                    score: gameState.score
+                }));
+            } catch (e) {
+                // ローカルストレージが使用できない場合は無視
+            }
+        }
+        
+        function loadGameState() {
+            try {
+                const saved = localStorage.getItem('crystalLogicSave');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    gameState.level = data.level || 1;
+                    gameState.score = data.score || 0;
+                }
+            } catch (e) {
+                // 読み込みエラーの場合はデフォルト値を使用
+            }
+        }
+        
+        // レベルアップ時にセーブ
+        const originalCheckWinCondition = checkWinCondition;
+        checkWinCondition = function() {
+            const wasCompleted = gameState.isCompleted;
+            originalCheckWinCondition();
+            if (gameState.isCompleted && !wasCompleted) {
+                saveGameState();
+            }
+        };
+        
+        // 画面サイズ調整
+        function adjustGameSize() {
+            const gameContainer = document.querySelector('.game-container');
+            const vh = window.innerHeight;
+            const vw = window.innerWidth;
+            
+            // 小さい画面での調整
+            if (vh < 600 || vw < 400) {
+                gameContainer.style.padding = '10px';
+                document.querySelector('.title').style.fontSize = '2rem';
+                document.querySelector('.game-board').style.width = '280px';
+                document.querySelector('.game-board').style.height = '280px';
+            }
+        }
+        
+        window.addEventListener('resize', adjustGameSize);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(adjustGameSize, 100);
+        });
+        
+        // ゲーム開始
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGameState();
+            initGame();
+            adjustGameSize();
+            startHintTimer();
+        });
+        
+        // ページ離脱時にセーブ
+        window.addEventListener('beforeunload', saveGameState);
+        
+        // デバッグ用（本番では削除可能）
+        window.gameState = gameState;
+        window.generateLevel = generateLevel;
+        window.checkWinCondition = checkWinCondition;
+    </script>
+</body>
+</html>
