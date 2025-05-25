@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crystal Logic</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-text-size-adjust: 100%;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            position: fixed;
+        }
+        
+        .stars {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+        
+        .star {
+            position: absolute;
+            background: #fff;
+            border-radius: 50%;
+            animation: twinkle 3s infinite alternate;
+        }
+        
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+        
+        .game-container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            max-width: 400px;
+            margin: 0 auto;
+            overflow: hidden;
+        }
+        
+        .title {
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin: 5px 0;
+            background: linear-gradient(45deg, #00d4ff, #ff6b9d, #c471ed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 8px;
+            font-size: 0.7rem;
+            color: #00d4ff;
+        }
+        
+        .target-selection {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .target-options {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        
+        .target-option {
+            flex: 1;
+            padding: 8px;
+            background: linear-gradient(45deg, rgba(0, 212, 255, 0.2), rgba(0, 212, 255, 0.1));
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: #00d4ff;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .target-option:hover {
+            background: linear-gradient(45deg, rgba(0, 212, 255, 0.4), rgba(0, 212, 255, 0.2));
+            transform: scale(1.05);
+        }
+        
+        .target-option.selected {
+            background: linear-gradient(45deg, #00d4ff, #0099cc);
+            color: #fff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.6);
+        }
+        
+        .target-info {
+            text-align: center;
+            font-size: 0.6rem;
+            color: #b8c6db;
+            margin-bottom: 8px;
+        }
+        
+        .current-selection {
+            text-align: center;
+            font-size: 0.8rem;
+            color: #00d4ff;
+            margin-bottom: 8px;
+            min-height: 1rem;
+        }
+        
+        .game-board {
+            width: 100%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 6px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 3px;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* 美しいクリスタル */
+        .crystal {
+            position: relative;
+            background: linear-gradient(145deg, #4A90E2 0%, #357ABD 25%, #2E7B9B 50%, #4A90E2 75%, #87CEEB 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            font-size: 1rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+                0 2px 5px rgba(0, 0, 0, 0.3),
+                0 0 8px rgba(74, 144, 226, 0.3);
+        }
+        
+        /* クリスタルの内部反射 */
+        .crystal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                transparent 0%, 
+                rgba(255, 255, 255, 0.2) 30%, 
+                rgba(255, 255, 255, 0.4) 50%, 
+                rgba(255, 255, 255, 0.2) 70%, 
+                transparent 100%);
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 1;
+            transform: scale(0.8);
+            opacity: 0.6;
+        }
+        
+        /* キラキラ効果 */
+        .crystal::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, 
+                transparent 30%, 
+                rgba(255, 255, 255, 0.6) 50%, 
+                transparent 70%);
+            transform: translateX(-100%) translateY(-100%) rotate(45deg);
+            transition: transform 0.8s cubic-bezier(0.25, 0.8, 0.25, 1);
+            pointer-events: none;
+            z-index: 2;
+        }
+        
+        /* ホバー効果 */
+        .crystal:hover {
+            transform: scale(1.08) translateY(-2px);
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.6),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 8px 15px rgba(0, 0, 0, 0.4),
+                0 0 20px rgba(74, 144, 226, 0.6),
+                0 0 30px rgba(135, 206, 235, 0.4);
+            background: linear-gradient(145deg, #5BA3F5 0%, #4A90E2 25%, #357ABD 50%, #5BA3F5 75%, #9DDCF0 100%);
+        }
+        
+        .crystal:hover::after {
+            transform: translateX(100%) translateY(100%) rotate(45deg);
+        }
+        
+        /* アクティブ効果 */
+        .crystal:active {
+            transform: scale(0.95) translateY(1px);
+            transition: all 0.1s ease;
+        }
+        
+        /* 選択されたクリスタル */
+        .crystal.selected {
+            background: linear-gradient(145deg, #FFD700 0%, #FFA500 25%, #FF8C00 50%, #FFD700 75%, #FFFF99 100%);
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 30px rgba(255, 140, 0, 0.6),
+                0 0 40px rgba(255, 165, 0, 0.4);
+            transform: scale(1.15) translateY(-3px);
+            z-index: 5;
+            animation: selectedPulse 1.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes selectedPulse {
+            0% { 
+                box-shadow: 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                    0 0 20px rgba(255, 215, 0, 0.8),
+                    0 0 30px rgba(255, 140, 0, 0.6),
+                    0 0 40px rgba(255, 165, 0, 0.4);
+            }
+            100% { 
+                box-shadow: 
+                    inset 0 1px 0 rgba(255, 255, 255, 0.7),
+                    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+                    0 0 30px rgba(255, 215, 0, 1),
+                    0 0 45px rgba(255, 140, 0, 0.8),
+                    0 0 60px rgba(255, 165, 0, 0.6);
+            }
+        }
+        
+        /* 使用済みクリスタル */
+        .crystal.used {
+            background: linear-gradient(145deg, #556270 0%, #4A4A4A 25%, #2C3E50 50%, #556270 75%, #6C7B87 100%);
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: #9AA0A6;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.5);
+            transform: none;
+        }
+        
+        .crystal.used:hover {
+            transform: none;
+            box-shadow: 
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.4),
+                0 1px 3px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(145deg, #556270 0%, #4A4A4A 25%, #2C3E50 50%, #556270 75%, #6C7B87 100%);
+        }
+        
+        .crystal.used::after {
+            display: none;
+        }
+        
+        /* タップエフェクト */
+        @keyframes tapRipple {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        .crystal.tap-effect::before {
+            animation: tapRipple 0.6s ease-out;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 70%);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 6px;
+            color: white;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            touch-action: manipulation;
+            flex: 1;
+            max-width: 80px;
+            white-space: nowrap;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn.clear {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+        
+        .btn.confirm {
+            background: linear-gradient(45deg, #2ecc71, #27ae60);
+        }
+        
+        .btn.new {
+            background: linear-gradient(45deg, #9b59b6, #8e44ad);
+        }
+        
+        .message {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #00d4ff;
+            min-height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 10px;
+        }
+        
+        .bonus-display {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #f1c40f, #f39c12);
+            color: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            z-index: 1000;
+            box-shadow: 0 0 30px rgba(241, 196, 15, 0.8);
+            animation: bonusAppear 2s ease-out forwards;
+        }
+        
+        @keyframes bonusAppear {
+            0% { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0.5); 
+            }
+            50% { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1.2); 
+            }
+            100% { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(1); 
+            }
+        }
+        
+        .remaining-info {
+            font-size: 0.6rem;
+            color: #b8c6db;
+            text-align: center;
+            margin-bottom: 5px;
+        }
+        
+        /* 音声有効化ボタン */
+        .sound-enable {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 212, 255, 0.8);
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+        }
+        
+        @media (max-height: 600px) {
+            .title { font-size: 1.5rem; margin: 3px 0; }
+            .game-board { max-width: 250px; }
+            .crystal { font-size: 0.9rem; }
+            .btn { padding: 6px 12px; font-size: 0.7rem; }
+            .stats { font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <button class="sound-enable" id="soundEnable" onclick="enableSound()">🔊</button>
+    
+    <div class="game-container">
+        <h1 class="title" onclick="resetGame()">Crystal Logic</h1>
+        
+        <div class="stats">
+            <span>レベル: <span id="level">1</span></span>
+            <span>スコア: <span id="score">0</span></span>
+            <span>残り: <span id="remaining">25</span>マス</span>
+        </div>
+        
+        <div class="target-selection" id="targetSelection">
+            <div class="target-options" id="targetOptions">
+                <!-- 目標選択肢がここに動的生成 -->
+            </div>
+            <div class="target-info">目標数値を選択してください</div>
+        </div>
+        
+        <div class="current-selection" id="currentSelection">
+            選択中: なし (0)
+        </div>
+        
+        <div class="remaining-info" id="remainingInfo">
+            全25マス使い切りで大ボーナス！
+        </div>
+        
+        <div class="game-board">
+            <div class="grid" id="gameGrid"></div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn clear" onclick="clearSelection()">クリア</button>
+            <button class="btn confirm" onclick="checkAnswer()">確認</button>
+            <button class="btn new" onclick="generateNewStage()">NEXT</button>
+        </div>
+        
+        <div class="message" id="message">目標数値を選択してクリスタルをタップしよう！</div>
+    </div>
+
+    <script>
+        // デバウンス処理用
+        let lastTapTime = 0;
+        const TAP_DEBOUNCE = 200;
+        
+        // ゲーム状態
+        let gameState = {
+            grid: [],
+            selectedCrystals: [],
+            usedCrystals: new Set(),
+            targetOptions: [],
+            selectedTarget: null,
+            currentSum: 0,
+            level: 1,
+            score: 0,
+            totalUsedCrystals: 0
+        };
+        
+        // 音声システム（Web Audio API + 代替手段）
+        let audioContext = null;
+        let soundEnabled = false;
+        
+        // 音声初期化
+        function initAudio() {
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                soundEnabled = true;
+                document.getElementById('soundEnable').style.display = 'none';
+                return true;
+            } catch (e) {
+                console.log('Web Audio API not supported, using fallback');
+                return false;
+            }
+        }
+        
+        // 音声有効化（ユーザーアクション必須）
+        function enableSound() {
+            if (initAudio()) {
+                playTapSound();
+                showMessage("音声が有効になりました！");
+            } else {
+                // フォールバック：HTML5 Audio
+                soundEnabled = true;
+                document.getElementById('soundEnable').style.display = 'none';
+                showMessage("音声が有効になりました！");
+            }
+        }
+        
+        // 美しいクリスタル音響効果
+        function playSound(frequency, duration, type = 'sine', volume = 0.15) {
+            if (!soundEnabled) return;
+            
+            if (audioContext && audioContext.state === 'running') {
+                try {
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+                    oscillator.type = type;
+                    
+                    gainNode.gain.setValueAtTime(volume, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + duration);
+                } catch (e) {
+                    console.log('Audio playback failed:', e);
+                }
+            } else {
+                // フォールバック：簡易音声
+                playFallbackSound(frequency);
+            }
+        }
+        
+        // より美しいクリスタル音
+        function playTapSound() {
+            // クリスタルらしい高く美しい音
+            playSound(880, 0.12, 'sine', 0.12); // 高音
+            setTimeout(() => playSound(1320, 0.08, 'sine', 0.08), 50); // ハーモニー
+        }
+        
+        function playSuccessSound() {
+            // 成功時の美しいハーモニー
+            playSound(523, 0.15, 'sine', 0.15);  // C
+            setTimeout(() => playSound(659, 0.15, 'sine', 0.12), 100); // E
+            setTimeout(() => playSound(784, 0.2, 'sine', 0.1), 200);   // G
+            setTimeout(() => playSound(1047, 0.25, 'sine', 0.08), 300); // C (オクターブ上)
+        }
+        
+        function playBonusSound() {
+            // ボーナス時の豪華なクリスタル音
+            const notes = [523, 659, 784, 1047, 1319]; // C-E-G-C-E
+            notes.forEach((note, index) => {
+                setTimeout(() => playSound(note, 0.2, 'sine', 0.1), index * 120);
+            });
+        }
+        
+        function playErrorSound() {
+            // エラー音もクリスタルらしく
+            playSound(220, 0.25, 'triangle', 0.1);
+        }
+        
+        function playButtonSound() {
+            // ボタン音
+            playSound(440, 0.1, 'sine', 0.08);
+        }
+        
+        // フォールバック音声（HTML5 Audio）
+        function playFallbackSound(frequency) {
+            try {
+                // 簡易的なビープ音の代替
+                const audio = new Audio();
+                // Data URLで簡単な音を生成（実際の実装では事前に用意した音声ファイルを使用）
+                const beep = "data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn559NEAxPqOLvt2McBjiS2e/NeSsFJHfH8N2QQAoUXrTp66hVFApGn+DyvmEcBUKY2fDFdiMFLYPO89OLOgcZZ7zn55";
+                audio.src = beep;
+                audio.volume = 0.1;
+                audio.play().catch(() => {
+                    // 音声再生に失敗した場合は無視
+                });
+            } catch (e) {
+                // フォールバック音声も失敗した場合は無視
+            }
+        }
+        
+        // 星空生成
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            starsContainer.innerHTML = '';
+            for (let i = 0; i < 25; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = (Math.random() * 2 + 1) + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 新ステージ生成
+        function generateNewStage() {
+            playButtonSound();
+            
+            // グリッド初期化
+            gameState.grid = [];
+            gameState.selectedCrystals = [];
+            gameState.usedCrystals.clear();
+            gameState.selectedTarget = null;
+            gameState.currentSum = 0;
+            gameState.totalUsedCrystals = 0;
+            
+            // 25個の数字生成（戦略的に配置）
+            for (let i = 0; i < 25; i++) {
+                gameState.grid.push(Math.floor(Math.random() * 9) + 1);
+            }
+            
+            generateTargetOptions();
+            updateDisplay();
+            showMessage("新しいステージが始まりました！目標数値を選択してください");
+        }
+        
+        // 目標選択肢生成
+        function generateTargetOptions() {
+            const remainingCrystals = 25 - gameState.totalUsedCrystals;
+            
+            // 残りクリスタル数に応じて適切な目標を生成
+            let baseTarget = Math.floor(remainingCrystals / 3) + 5;
+            
+            gameState.targetOptions = [
+                Math.max(5, baseTarget - 3),
+                baseTarget,
+                Math.min(30, baseTarget + 5)
+            ];
+            
+            // 目標選択肢をシャッフル
+            gameState.targetOptions.sort(() => Math.random() - 0.5);
+            
+            updateTargetDisplay();
+        }
+        
+        // 目標表示更新
+        function updateTargetDisplay() {
+            const targetOptions = document.getElementById('targetOptions');
+            targetOptions.innerHTML = '';
+            
+            gameState.targetOptions.forEach((target, index) => {
+                const option = document.createElement('div');
+                option.className = 'target-option';
+                option.textContent = target;
+                option.onclick = () => selectTarget(target);
+                targetOptions.appendChild(option);
+            });
+        }
+        
+        // 目標選択
+        function selectTarget(target) {
+            playTapSound();
+            gameState.selectedTarget = target;
+            
+            // 選択状態を視覚的に表示
+            const options = document.querySelectorAll('.target-option');
+            options.forEach(option => {
+                option.classList.remove('selected');
+                if (parseInt(option.textContent) === target) {
+                    option.classList.add('selected');
+                }
+            });
+            
+            updateDisplay();
+            showMessage(`目標 ${target} を選択しました！クリスタルをタップして数字を集めよう`);
+        }
+        
+        // タップエフェクト追加
+        function addTapEffect(element) {
+            element.classList.add('tap-effect');
+            setTimeout(() => {
+                element.classList.remove('tap-effect');
+            }, 600);
+        }
+        
+        // クリスタル選択
+        function selectCrystal(index) {
+            const currentTime = Date.now();
+            if (currentTime - lastTapTime < TAP_DEBOUNCE) return;
+            lastTapTime = currentTime;
+            
+            // 初回タップで音声を有効化
+            if (!soundEnabled) {
+                document.getElementById('soundEnable').style.display = 'block';
+            }
+            
+            if (!gameState.selectedTarget) {
+                showMessage("まず目標数値を選択してください");
+                playErrorSound();
+                return;
+            }
+            
+            if (gameState.usedCrystals.has(index)) {
+                showMessage("このクリスタルは既に使用されています");
+                playErrorSound();
+                return;
+            }
+            
+            const number = gameState.grid[index];
+            
+            // 目標を超える場合はエラー
+            if (gameState.currentSum + number > gameState.selectedTarget) {
+                showMessage(`目標 ${gameState.selectedTarget} を超えてしまいます`);
+                playErrorSound();
+                return;
+            }
+            
+            playTapSound();
+            
+            // タップエフェクトを追加
+            const crystalElement = document.querySelector(`[data-index="${index}"]`);
+            if (crystalElement) {
+                addTapEffect(crystalElement);
+            }
+            
+            gameState.selectedCrystals.push({index, number});
+            gameState.currentSum += number;
+            
+            updateDisplay();
+            
+            if (gameState.currentSum === gameState.selectedTarget) {
+                showMessage(`目標達成！確認ボタンを押してください`);
+            }
+        }
+        
+        // 答えチェック
+        function checkAnswer() {
+            playButtonSound();
+            
+            if (!gameState.selectedTarget) {
+                showMessage("目標数値を選択してください");
+                playErrorSound();
+                return;
+            }
+            
+            if (gameState.selectedCrystals.length === 0) {
+                showMessage("クリスタルを選択してください");
+                playErrorSound();
+                return;
+            }
+            
+            if (gameState.currentSum !== gameState.selectedTarget) {
+                showMessage(`計算結果 ${gameState.currentSum} ≠ 目標 ${gameState.selectedTarget}`);
+                playErrorSound();
+                return;
+            }
+            
+            // 正解処理
+            playSuccessSound();
+            
+            // 使用済みマークを付ける
+            gameState.selectedCrystals.forEach(crystal => {
+                gameState.usedCrystals.add(crystal.index);
+            });
+            
+            gameState.totalUsedCrystals += gameState.selectedCrystals.length;
+            
+            // スコア計算
+            const baseScore = gameState.selectedCrystals.length * 10;
+            let bonusScore = 0;
+            let bonusMessage = "";
+            
+            // 段階ボーナス
+            if (gameState.selectedCrystals.length >= 10) {
+                bonusScore += 50;
+                bonusMessage = "グッド！";
+            }
+            if (gameState.selectedCrystals.length >= 15) {
+                bonusScore += 50; // 追加で50点
+                bonusMessage = "グレート！";
+            }
+            if (gameState.selectedCrystals.length >= 20) {
+                bonusScore += 100; // 追加で100点
+                bonusMessage = "エクセレント！";
+            }
+            
+            const totalScore = baseScore + bonusScore;
+            gameState.score += totalScore;
+            
+            // 全マス使い切りチェック
+            if (gameState.totalUsedCrystals >= 25) {
+                const perfectBonus = 1000 + (gameState.level * 300);
+                gameState.score += perfectBonus;
+                showBonusDisplay(`パーフェクトクリア！\n+${perfectBonus}点`);
+                playBonusSound();
+                
+                setTimeout(() => {
+                    gameState.level++;
+                    generateNewStage();
+                    showMessage(`レベル ${gameState.level} に進みました！おめでとうございます！`);
+                }, 2500);
+            } else {
+                if (bonusMessage) {
+                    showMessage(`正解！${bonusMessage} +${totalScore}点`);
+                } else {
+                    showMessage(`正解！ +${totalScore}点`);
+                }
+                
+                // 次の目標生成
+                setTimeout(() => {
+                    generateTargetOptions();
+                    clearSelection();
+                    showMessage("次の目標数値を選択してください");
+                }, 1500);
+            }
+            
+            clearSelection();
+            updateDisplay();
+        }
+        
+        // ボーナス表示
+        function showBonusDisplay(text) {
+            const bonusDiv = document.createElement('div');
+            bonusDiv.className = 'bonus-display';
+            bonusDiv.textContent = text;
+            document.body.appendChild(bonusDiv);
+            
+            setTimeout(() => {
+                if (bonusDiv.parentNode) {
+                    bonusDiv.parentNode.removeChild(bonusDiv);
+                }
+            }, 2000);
+        }
+        
+        // 選択クリア
+        function clearSelection() {
+            playButtonSound();
+            gameState.selectedCrystals = [];
+            gameState.currentSum = 0;
+            updateDisplay();
+        }
+        
+        // 表示更新
+        function updateDisplay() {
+            // グリッド更新
+            const gameGrid = document.getElementById('gameGrid');
+            gameGrid.innerHTML = '';
+            
+            for (let i = 0; i < 25; i++) {
+                const crystal = document.createElement('div');
+                crystal.className = 'crystal';
+                crystal.textContent = gameState.grid[i] || '?';
+                crystal.setAttribute('data-index', i);
+                
+                // イベントリスナー
+                crystal.addEventListener('click', () => selectCrystal(i));
+                crystal.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    selectCrystal(i);
+                });
+                
+                // 状態表示
+                if (gameState.selectedCrystals.some(c => c.index === i)) {
+                    crystal.classList.add('selected');
+                }
+                
+                if (gameState.usedCrystals.has(i)) {
+                    crystal.classList.add('used');
+                }
+                
+                gameGrid.appendChild(crystal);
+            }
+            
+            // ステータス更新
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('remaining').textContent = 25 - gameState.totalUsedCrystals;
+            
+            // 現在の選択表示
+            const currentSelection = document.getElementById('currentSelection');
+            if (gameState.selectedTarget) {
+                currentSelection.textContent = `目標: ${gameState.selectedTarget} | 現在: ${gameState.currentSum}`;
+            } else {
+                currentSelection.textContent = "選択中: なし (0)";
+            }
+            
+            // 残り情報更新
+            const remainingInfo = document.getElementById('remainingInfo');
+            const remaining = 25 - gameState.totalUsedCrystals;
+            if (remaining <= 5) {
+                remainingInfo.textContent = `残り${remaining}マス！全マス使い切りまであと少し！`;
+                remainingInfo.style.color = '#f1c40f';
+            } else {
+                remainingInfo.textContent = `全25マス使い切りで大ボーナス！`;
+                remainingInfo.style.color = '#b8c6db';
+            }
+        }
+        
+        // メッセージ表示
+        function showMessage(text) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = text;
+            
+            setTimeout(() => {
+                if (messageElement.textContent === text) {
+                    if (!gameState.selectedTarget) {
+                        messageElement.textContent = "目標数値を選択してクリスタルをタップしよう！";
+                    } else {
+                        messageElement.textContent = "クリスタルをタップして目標数値を作ろう！";
+                    }
+                }
+            }, 3000);
+        }
+        
+        // ゲームリセット
+        function resetGame() {
+            playButtonSound();
+            gameState.level = 1;
+            gameState.score = 0;
+            generateNewStage();
+            showMessage("ゲームをリセットしました！新たな冒険の始まりです！");
+        }
+        
+        // 初期化
+        function initGame() {
+            createStars();
+            
+            // 音声初期化を試行
+            if (!initAudio()) {
+                document.getElementById('soundEnable').style.display = 'block';
+            }
+            
+            generateNewStage();
+            showMessage("Crystal Logicへようこそ！戦略的に全マス使い切りを目指そう！");
+        }
+        
+        // エラーハンドリング
+        window.addEventListener('error', (e) => {
+            console.error('Game Error:', e.error);
+            showMessage("エラーが発生しました。NEXTボタンを押してください");
+        });
+        
+        // タッチイベント最適化とオーディオ有効化
+        document.addEventListener('touchstart', (e) => {
+            // 音声コンテキスト有効化
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    soundEnabled = true;
+                    document.getElementById('soundEnable').style.display = 'none';
+                });
+            }
+        }, {once: true, passive: true});
+        
+        // クリックでも音声有効化
+        document.addEventListener('click', (e) => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().then(() => {
+                    soundEnabled = true;
+                    document.getElementById('soundEnable').style.display = 'none';
+                });
+            }
+        }, {once: true});
+        
+        // 自動セーブ・ロード機能
+        function saveGame() {
+            try {
+                localStorage.setItem('crystalLogicSave', JSON.stringify({
+                    level: gameState.level,
+                    score: gameState.score
+                }));
+            } catch (e) {
+                // ローカルストレージエラーは無視
+            }
+        }
+        
+        function loadGame() {
+            try {
+                const saved = localStorage.getItem('crystalLogicSave');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    gameState.level = data.level || 1;
+                    gameState.score = data.score || 0;
+                }
+            } catch (e) {
+                // 読み込みエラーは無視
+            }
+        }
+        
+        // レベルアップ時にセーブ
+        const originalGenerateNewStage = generateNewStage;
+        generateNewStage = function() {
+            originalGenerateNewStage();
+            saveGame();
+        };
+        
+        // 画面サイズ調整
+        function adjustGameSize() {
+            const vh = window.innerHeight;
+            if (vh < 600) {
+                document.body.classList.add('compact');
+            } else {
+                document.body.classList.remove('compact');
+            }
+        }
+        
+        window.addEventListener('resize', adjustGameSize);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(adjustGameSize, 100);
+        });
+        
+        // キーボードショートカット
+        document.addEventListener('keydown', (e) => {
+            switch(e.key) {
+                case 'c':
+                case 'C':
+                    e.preventDefault();
+                    clearSelection();
+                    break;
+                case 'Enter':
+                case ' ':
+                    e.preventDefault();
+                    checkAnswer();
+                    break;
+                case 'n':
+                case 'N':
+                    e.preventDefault();
+                    generateNewStage();
+                    break;
+                case 'r':
+                case 'R':
+                    e.preventDefault();
+                    resetGame();
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    clearSelection();
+                    break;
+            }
+        });
+        
+        // ページ離脱時にセーブ
+        window.addEventListener('beforeunload', saveGame);
+        
+        // 初期化実行
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGame();
+            initGame();
+            adjustGameSize();
+        });
+        
+        // フォールバック初期化
+        setTimeout(() => {
+            if (!gameState.grid.length) {
+                initGame();
+            }
+        }, 1000);
+        
+        // デバッグ用（本番では削除可能）
+        if (window.location.hash === '#debug') {
+            window.gameState = gameState;
+            window.playSound = playSound;
+            console.log('Debug mode enabled');
+        }
+    </script>
+</body>
+</html>
